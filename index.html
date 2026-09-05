@@ -24,6 +24,87 @@ PROGRAM.upA.ex[1] = {n:"Подтягивания в гравитроне", s:4, 
 PROGRAM.lowB.ex = PROGRAM.lowB.ex.filter(function(e){ return e.n !== "Отведения бедра в тренажёре"; });
 renderDays();
 renderAll();
+
+/* === Жим лёжа: путь к 100 кг (расчёт максимума без максимумов) === */
+var BENCH = "Жим штанги лёжа";
+var GOAL = 100;
+function e1rm(w, r){ return w * (1 + r / 30); }
+function r05(x){ return Math.round(x * 2) / 2; }
+function r25(x){ return Math.round(x / 2.5) * 2.5; }
+function benchRows(){
+  var out = [];
+  var ss = (store && store.sessions) || {};
+  Object.keys(ss).forEach(function(k){
+    var s = ss[k];
+    if(!s || !s.sets || !s.sets[BENCH]) return;
+    var best = 0, bw = 0, br = 0, tops = 0, minr = 99;
+    s.sets[BENCH].forEach(function(x){
+      if(!x) return;
+      var w = parseFloat(x.w), r = parseInt(x.r, 10);
+      if(!(w > 0 && r > 0)) return;
+      tops++;
+      if(r < minr) minr = r;
+      var e = e1rm(w, r);
+      if(e > best){ best = e; bw = w; br = r; }
+    });
+    if(best > 0) out.push({date: s.date || k, e: best, w: bw, r: br, sets: tops, minr: minr});
+  });
+  out.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+  return out;
+}
+function renderBench(){
+  var host = document.getElementById("exercises");
+  if(!host) return;
+  var box = document.getElementById("benchbox");
+  if(!box){
+    host.insertAdjacentHTML("afterend", '<div id="benchbox" style="margin:16px;padding:16px;border-radius:16px;background:#171a20;border:1px solid #23272f"></div>');
+    box = document.getElementById("benchbox");
+  }
+  var rows = benchRows();
+  if(!rows.length){
+    box.innerHTML = '<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8b93a1">Жим лёжа → 100 кг</div>' +
+      '<p style="margin:10px 0 0;color:#8b93a1;font-size:14px">Запиши вес и повторы в жиме — и здесь появится расчётный максимум. На максимум жать не нужно.</p>';
+    return;
+  }
+  var last = rows[rows.length - 1];
+  var best = rows.reduce(function(a, b){ return b.e > a.e ? b : a; }, rows[0]);
+  var cur = r05(best.e);
+  var pct = Math.max(0, Math.min(100, cur / GOAL * 100));
+  var prev = null;
+  for(var i = rows.length - 2; i >= 0; i--){ if(rows[i].e !== last.e){ prev = rows[i]; break; } }
+  var delta = prev ? r05(last.e - prev.e) : 0;
+  var deltaTxt = prev ? (delta > 0 ? "+" + delta + " кг с прошлой тренировки" : (delta < 0 ? delta + " кг с прошлой тренировки" : "без изменений")) : "первая точка отсчёта";
+  var hint;
+  if(last.minr >= 12 && last.sets >= 4){
+    hint = "Все подходы по 12+ повторов — в следующий раз ставь " + r05(parseFloat(last.w) + 2.5) + " кг.";
+  } else if(last.minr < 8){
+    hint = "Меньше 8 повторов в подходе — оставь " + last.w + " кг и добери повторы.";
+  } else {
+    hint = "Держи " + last.w + " кг, пока не сделаешь все подходы по 12 повторов.";
+  }
+  var hist = rows.slice(-8).reverse().map(function(x){
+    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #23272f;font-size:13px">' +
+      '<span style="color:#8b93a1">' + (typeof fmtDate === "function" ? fmtDate(x.date) : x.date) + '</span>' +
+      '<span>' + x.w + ' кг × ' + x.r + '</span>' +
+      '<span style="font-weight:600">' + r05(x.e) + ' кг</span></div>';
+  }).join("");
+  box.innerHTML =
+    '<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8b93a1">Жим лёжа → 100 кг</div>' +
+    '<div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 2px">' +
+      '<span style="font-size:34px;font-weight:700">' + cur + '</span>' +
+      '<span style="color:#8b93a1">кг на раз (расчёт)</span></div>' +
+    '<div style="color:#8b93a1;font-size:13px;margin-bottom:10px">' + deltaTxt + '</div>' +
+    '<div style="height:8px;border-radius:8px;background:#23272f;overflow:hidden"><span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,#4c8dff,#7bd88f)"></span></div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:12px;color:#8b93a1;margin-top:6px"><span>' + Math.round(pct) + '% пути</span><span>осталось ' + r05(Math.max(0, GOAL - cur)) + ' кг</span></div>' +
+    '<p style="margin:12px 0 0;font-size:14px">' + hint + '</p>' +
+    '<div style="margin-top:10px">' + hist + '</div>' +
+    '<p style="margin:10px 0 0;font-size:12px;color:#8b93a1">Максимум считается по формуле Эпли из рабочих подходов. На максимум жать не нужно: 5 повторов с нормальным весом дают ту же оценку.</p>';
+}
+if (typeof updateProgress === "function"){
+  var _updateProgress = updateProgress;
+  window.updateProgress = function(){ _updateProgress(); try { renderBench(); } catch(e){} };
+}
+try { renderBench(); } catch(e){}
 </script>
 
 <script>
@@ -48,7 +129,7 @@ renderAll();
     try { localStorage.setItem(CACHE, t); } catch(e){}
     boot(t);
   }).catch(function(e){
-    msg.textContent = "Не удалось загрузить дневник: " + e.message + ". Проверь интернет и обнови страницу."; 
+    msg.textContent = "Не удалось загрузить дневник: " + e.message + ". Проверь интернет и обнови страницу.";
   });
 })();
 </script>
