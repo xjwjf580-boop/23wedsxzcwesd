@@ -25,10 +25,22 @@ PROGRAM.lowB.ex = PROGRAM.lowB.ex.filter(function(e){ return e.n !== "Отвед
 renderDays();
 renderAll();
 
+/* Планка → Скручивания на верхнем блоке (болит шея в планке) */
+try {
+  var _lowA = PROGRAM.lowA.ex;
+  for (var _i = 0; _i < _lowA.length; _i++) {
+    if (_lowA[_i].n.indexOf("Планка") === 0) {
+      _lowA[_i] = {n:"Скручивания на верхнем блоке", s:3, r:"12–15"};
+    }
+  }
+  renderDays();
+  renderAll();
+} catch(e){}
+
 /* === Жим лёжа: путь к 100 кг (расчёт максимума без максимумов) === */
 var BENCH = "Жим штанги лёжа";
 var GOAL = 100;
-function e1rm(w, r){ return w * (1 + r / 30); }
+function e1rm(w, r){ return r <= 1 ? w : w * (1 + r / 30); }
 function r05(x){ return Math.round(x * 2) / 2; }
 function r25(x){ return Math.round(x / 2.5) * 2.5; }
 function benchRows(){
