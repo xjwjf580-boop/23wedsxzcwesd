@@ -123,6 +123,67 @@ if (typeof updateProgress === "function"){
   window.updateProgress = function(){ _updateProgress(); try { renderBench(); } catch(e){} };
 }
 try { renderBench(); } catch(e){}
+
+/* === Бэкап и восстановление истории === */
+try {
+  var _exp = document.getElementById("export");
+  if (_exp && !document.getElementById("bkp")) {
+    _exp.insertAdjacentHTML("afterend",
+      '<button type="button" class="btn" id="bkp">Сохранить бэкап</button>' +
+      '<button type="button" class="btn" id="rst">Восстановить из бэкапа</button>' +
+      '<input type="file" id="rstfile" accept=".json,application/json,text/plain" style="display:none">');
+
+    document.getElementById("bkp").onclick = function(){
+      var data = JSON.stringify(store);
+      var blob = new Blob([data], {type:"application/json;charset=utf-8"});
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "gymlog-backup-" + new Date().toISOString().slice(0,10) + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      if (typeof toast === "function") toast("Бэкап скачан — не удаляй файл");
+    };
+
+    document.getElementById("rst").onclick = function(){
+      document.getElementById("rstfile").click();
+    };
+
+    document.getElementById("rstfile").onchange = function(ev){
+      var f = ev.target.files && ev.target.files[0];
+      if(!f) return;
+      var fr = new FileReader();
+      fr.onload = function(){
+        try {
+          var inc = JSON.parse(String(fr.result));
+          var incs = (inc && inc.sessions) || {};
+          var n = 0;
+          Object.keys(incs).forEach(function(k){
+            if(!store.sessions[k]){ store.sessions[k] = incs[k]; n++; }
+            else {
+              var a = store.sessions[k], b = incs[k];
+              b.sets = b.sets || {};
+              Object.keys(b.sets).forEach(function(ex){
+                if(!a.sets[ex] || !a.sets[ex].length){ a.sets[ex] = b.sets[ex]; n++; }
+              });
+              ["cardio","pulse","steps","note","bw"].forEach(function(fl){
+                if(!a[fl] && b[fl]) a[fl] = b[fl];
+              });
+            }
+          });
+          save();
+          renderAll();
+          if (typeof renderHist === "function") renderHist();
+          if (typeof updateProgress === "function") updateProgress();
+          if (typeof toast === "function") toast("Восстановлено записей: " + n);
+        } catch(e){
+          alert("Не удалось прочитать бэкап: " + e.message);
+        }
+        ev.target.value = "";
+      };
+      fr.readAsText(f);
+    };
+  }
+} catch(e){}
 </script>
 
 <script>
@@ -147,7 +208,7 @@ try { renderBench(); } catch(e){}
     try { localStorage.setItem(CACHE, t); } catch(e){}
     boot(t);
   }).catch(function(e){
-    msg.textContent = "Не удалось загрузить дневник: " + e.message + ". Проверь интернет и обнови страницу.";
+    msg.textContent = "Не удалось загрузить дневник: " + e.message + ". Проверь интернет и обнови страницу."
   });
 })();
 </script>
