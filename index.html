@@ -245,6 +245,73 @@ try {
     try { history.replaceState(null, "", location.pathname); } catch(e){}
   }
 } catch(e){}
+
+/* === Вставка данных «Здоровья» из буфера обмена === */
+try {
+  function hkApply(txt){
+    if(!txt) return 0;
+    var t = String(txt).trim();
+    var i = t.indexOf("?");
+    if(i >= 0) t = t.slice(i + 1);
+    t = t.replace(/[;\n\r,\s]+/g, "&").replace(/&+/g, "&");
+    var p = new URLSearchParams(t);
+    function num(v){ var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : null; }
+    var got = [];
+    if(p.has("date")){
+      var d = p.get("date");
+      if(/^\d{4}-\d{2}-\d{2}$/.test(d)) document.getElementById("date").value = d;
+    }
+    var s = session(), v;
+    v = num(p.get("steps"));
+    if(v !== null){ s.steps = String(Math.round(v)); got.push("шаги " + s.steps); }
+    v = num(p.get("pulse"));
+    if(v !== null){ s.pulse = String(Math.round(v)); got.push("пульс " + s.pulse); }
+    v = num(p.get("bw"));
+    if(v !== null){ s.bw = String(Math.round(v * 10) / 10); got.push("вес " + s.bw); }
+    v = num(p.get("cardio"));
+    if(v !== null){ s.cardio = String(Math.round(v)); got.push("кардио " + s.cardio); }
+    var extra = [];
+    v = num(p.get("kcal"));
+    if(v !== null){ extra.push("Активные ккал: " + Math.round(v)); got.push("ккал " + Math.round(v)); }
+    v = num(p.get("sleep"));
+    if(v !== null){ extra.push("Сон: " + (Math.round(v * 10) / 10) + " ч"); got.push("сон " + (Math.round(v * 10) / 10) + " ч"); }
+    if(extra.length){
+      var line = extra.join(", ");
+      var cur = (s.note || "").replace(/\s*\u0410ктивные ккал:[^\n]*/g, "").replace(/\s*\u0421он:[^\n]*/g, "").trim();
+      s.note = cur ? (cur + "\n" + line) : line;
+    }
+    if(!got.length) return 0;
+    save();
+    renderAll();
+    if (typeof renderHist === "function") renderHist();
+    if (typeof updateProgress === "function") updateProgress();
+    if (typeof toast === "function") toast("Из «Здоровья»: " + got.join(", "));
+    return got.length;
+  }
+  window.hkApply = hkApply;
+
+  var _hb = document.getElementById("hkbtn");
+  if (_hb && !document.getElementById("hkpaste")) {
+    _hb.insertAdjacentHTML("afterend",
+      '<button type="button" class="btn primary" id="hkpaste" style="margin-top:8px;width:100%">Вставить из буфера</button>');
+    var _hint = document.getElementById("hkhint");
+    if (_hint) _hint.textContent = "1) Подтянуть — запустит команду. 2) Вернись сюда и нажми «Вставить из буфера».";
+
+    document.getElementById("hkpaste").onclick = function(){
+      function manual(){
+        var t = prompt("Вставь строку из команды (удержи поле → Вставить):", "");
+        if(t && !hkApply(t)) alert("Не нашёл чисел. Формат: steps=12744;kcal=680;pulse=59");
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(function(t){
+            if(!hkApply(t)) manual();
+          }).catch(manual);
+        } else { manual(); }
+      } catch(e){ manual(); }
+    };
+  }
+} catch(e){}
 </script>
 
 <script>
