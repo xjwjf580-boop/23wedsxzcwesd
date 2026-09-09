@@ -184,6 +184,67 @@ try {
     };
   }
 } catch(e){}
+
+/* === Импорт из приложения «Здоровье» через Быструю команду === */
+try {
+  var SC_NAME = "Здоровье в дневник";
+
+  var _st = document.getElementById("steps");
+  if (_st && !document.getElementById("hkbtn")) {
+    var _host = _st.closest("section") || _st.parentNode;
+    _host.insertAdjacentHTML("beforeend",
+      '<button type="button" class="btn" id="hkbtn" style="margin-top:10px;width:100%">Подтянуть из «Здоровья»</button>' +
+      '<p id="hkhint" style="margin:6px 0 0;font-size:12px;color:#8b93a1">Нужна Быстрая команда с именем «' + SC_NAME + '».</p>');
+    document.getElementById("hkbtn").onclick = function(){
+      location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(SC_NAME);
+    };
+  }
+
+  var _qs = new URLSearchParams(location.search || "");
+  if (location.hash && location.hash.length > 1 && !location.search) {
+    _qs = new URLSearchParams(location.hash.slice(1));
+  }
+  var _got = [];
+  function _num(v){ var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : null; }
+
+  if (["steps","kcal","pulse","bw","cardio","sleep","date"].some(function(k){ return _qs.has(k); })) {
+    if (_qs.has("date")) {
+      var _d = _qs.get("date");
+      if (/^\d{4}-\d{2}-\d{2}$/.test(_d)) { document.getElementById("date").value = _d; }
+    }
+    var s = session();
+
+    var _v = _num(_qs.get("steps"));
+    if (_v !== null) { s.steps = String(Math.round(_v)); _got.push("шаги " + s.steps); }
+
+    _v = _num(_qs.get("pulse"));
+    if (_v !== null) { s.pulse = String(Math.round(_v)); _got.push("пульс " + s.pulse); }
+
+    _v = _num(_qs.get("bw"));
+    if (_v !== null) { s.bw = String(Math.round(_v * 10) / 10); _got.push("вес " + s.bw); }
+
+    _v = _num(_qs.get("cardio"));
+    if (_v !== null) { s.cardio = String(Math.round(_v)); _got.push("кардио " + s.cardio + " мин"); }
+
+    var _extra = [];
+    _v = _num(_qs.get("kcal"));
+    if (_v !== null) { _extra.push("Активные ккал: " + Math.round(_v)); _got.push("ккал " + Math.round(_v)); }
+    _v = _num(_qs.get("sleep"));
+    if (_v !== null) { _extra.push("Сон: " + (Math.round(_v * 10) / 10) + " ч"); _got.push("сон " + (Math.round(_v * 10) / 10) + " ч"); }
+    if (_extra.length) {
+      var _line = _extra.join(", ");
+      var _cur = s.note || "";
+      if (_cur.indexOf(_line) === -1) { s.note = _cur ? (_cur.replace(/\s*\u0410ктивные ккал:[^\n]*/g, "").trim() + "\n" + _line).trim() : _line; }
+    }
+
+    save();
+    renderAll();
+    if (typeof renderHist === "function") renderHist();
+    if (typeof updateProgress === "function") updateProgress();
+    if (typeof toast === "function" && _got.length) toast("Из «Здоровья»: " + _got.join(", "));
+    try { history.replaceState(null, "", location.pathname); } catch(e){}
+  }
+} catch(e){}
 </script>
 
 <script>
