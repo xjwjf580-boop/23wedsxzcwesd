@@ -9,259 +9,22 @@
 <body>
 <div id="boot"><p id="msg">Загружаю дневник…</p></div>
 
-<script type="text/plain" id="patch">
-Object.assign(TECH, {
-"Жим штанги лёжа":{how:["Лопатки сведены и прижаты к скамье, грудь вверх, стопы плотно в полу.","Хват чуть шире плеч, гриф над серединой груди.","Опускай 2–3 сек до касания низа груди, локти под 45–60° к корпусу.","Жми мощно вверх по чуть наклонной дуге, вверху локти не защёлкивай.","Первые недели работай в раме или со страхующим."],err:["Локти строго в стороны — риск для плеча","Отбив грифа от груди","Отрыв таза от скамьи","Гриф опускается на шею или на живот"]},
-"Подтягивания в гравитроне":{how:["Выставь противовес так, чтобы уверенно делать 8–10 повторов.","Хват чуть шире плеч, колени на подушку, корпус слегка отклонён назад.","Начинай движение с опускания лопаток вниз-назад, потом тяни локтями к рёбрам.","Вверху подбородок выше уровня рук, пауза 1 сек.","Опускайся 2–3 сек до полного растяжения широчайших.","Каждую неделю снижай противовес на 2–5 кг."],err:["Рывки и раскачка корпусом","Тяга только бицепсами, без работы лопаток","Половинная амплитуда — не доводишь себя вверх","Слишком большой противовес, нагрузки почти нет"]}
-});
-Object.assign(QRY, {
-"Жим штанги лёжа":"жим штанги лёжа техника выполнения",
-"Подтягивания в гравитроне":"подтягивания в гравитроне техника для новичка"
-});
-delete TECH["Отведения бедра в тренажёре"];
-PROGRAM.upA.ex[0] = {n:"Жим штанги лёжа", s:4, r:"8–12"};
-PROGRAM.upA.ex[1] = {n:"Подтягивания в гравитроне", s:4, r:"8–12"};
-PROGRAM.lowB.ex = PROGRAM.lowB.ex.filter(function(e){ return e.n !== "Отведения бедра в тренажёре"; });
-renderDays();
-renderAll();
-
-/* Планка → Скручивания в тренажёре сидя (болят колени) */
-Object.assign(TECH, {
-"Скручивания в тренажёре сидя":{how:["Садись плотно в спинку, валик или рукоятки на груди, не на шее.","Скругляй спину и тяни рёбра к тазу — работает только пресс.","Пауза 1 сек в сжатии, возврат 2–3 сек.","Ноги и колени не участвуют, на них нет нагрузки."],err:["Тяга руками и плечами","Слишком большой вес и рывки","Прямая спина — пресс не включается"]}
-});
-Object.assign(QRY, {
-"Скручивания в тренажёре сидя":"скручивания в тренажёре на пресс сидя техника"
-});
+<script type="text/plain" id="extra">
+/* Вставка данных «Здоровья» из буфера обмена */
 try {
-  var _lowA = PROGRAM.lowA.ex;
-  for (var _i = 0; _i < _lowA.length; _i++) {
-    if (_lowA[_i].n.indexOf("Планка") === 0 || _lowA[_i].n === "Скручивания на верхнем блоке") {
-      _lowA[_i] = {n:"Скручивания в тренажёре сидя", s:3, r:"12–15"};
-    }
-  }
-  renderDays();
-  renderAll();
-} catch(e){}
-
-/* === Жим лёжа: путь к 100 кг (расчёт максимума без максимумов) === */
-var BENCH = "Жим штанги лёжа";
-var GOAL = 100;
-function e1rm(w, r){ return r <= 1 ? w : w * (1 + r / 30); }
-function r05(x){ return Math.round(x * 2) / 2; }
-function r25(x){ return Math.round(x / 2.5) * 2.5; }
-function benchRows(){
-  var out = [];
-  var ss = (store && store.sessions) || {};
-  Object.keys(ss).forEach(function(k){
-    var s = ss[k];
-    if(!s || !s.sets || !s.sets[BENCH]) return;
-    var best = 0, bw = 0, br = 0, tops = 0, minr = 99;
-    s.sets[BENCH].forEach(function(x){
-      if(!x) return;
-      var w = parseFloat(x.w), r = parseInt(x.r, 10);
-      if(!(w > 0 && r > 0)) return;
-      tops++;
-      if(r < minr) minr = r;
-      var e = e1rm(w, r);
-      if(e > best){ best = e; bw = w; br = r; }
-    });
-    if(best > 0) out.push({date: s.date || k, e: best, w: bw, r: br, sets: tops, minr: minr});
-  });
-  out.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-  return out;
-}
-function renderBench(){
-  var host = document.getElementById("exercises");
-  if(!host) return;
-  var box = document.getElementById("benchbox");
-  if(!box){
-    host.insertAdjacentHTML("afterend", '<div id="benchbox" style="margin:16px;padding:16px;border-radius:16px;background:#171a20;border:1px solid #23272f"></div>');
-    box = document.getElementById("benchbox");
-  }
-  var rows = benchRows();
-  if(!rows.length){
-    box.innerHTML = '<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8b93a1">Жим лёжа → 100 кг</div>' +
-      '<p style="margin:10px 0 0;color:#8b93a1;font-size:14px">Запиши вес и повторы в жиме — и здесь появится расчётный максимум. На максимум жать не нужно.</p>';
-    return;
-  }
-  var last = rows[rows.length - 1];
-  var best = rows.reduce(function(a, b){ return b.e > a.e ? b : a; }, rows[0]);
-  var cur = r05(best.e);
-  var pct = Math.max(0, Math.min(100, cur / GOAL * 100));
-  var prev = null;
-  for(var i = rows.length - 2; i >= 0; i--){ if(rows[i].e !== last.e){ prev = rows[i]; break; } }
-  var delta = prev ? r05(last.e - prev.e) : 0;
-  var deltaTxt = prev ? (delta > 0 ? "+" + delta + " кг с прошлой тренировки" : (delta < 0 ? delta + " кг с прошлой тренировки" : "без изменений")) : "первая точка отсчёта";
-  var hint;
-  if(last.minr >= 12 && last.sets >= 4){
-    hint = "Все подходы по 12+ повторов — в следующий раз ставь " + r05(parseFloat(last.w) + 2.5) + " кг.";
-  } else if(last.minr < 8){
-    hint = "Меньше 8 повторов в подходе — оставь " + last.w + " кг и добери повторы.";
-  } else {
-    hint = "Держи " + last.w + " кг, пока не сделаешь все подходы по 12 повторов.";
-  }
-  var hist = rows.slice(-8).reverse().map(function(x){
-    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #23272f;font-size:13px">' +
-      '<span style="color:#8b93a1">' + (typeof fmtDate === "function" ? fmtDate(x.date) : x.date) + '</span>' +
-      '<span>' + x.w + ' кг × ' + x.r + '</span>' +
-      '<span style="font-weight:600">' + r05(x.e) + ' кг</span></div>';
-  }).join("");
-  box.innerHTML =
-    '<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8b93a1">Жим лёжа → 100 кг</div>' +
-    '<div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 2px">' +
-      '<span style="font-size:34px;font-weight:700">' + cur + '</span>' +
-      '<span style="color:#8b93a1">кг на раз (расчёт)</span></div>' +
-    '<div style="color:#8b93a1;font-size:13px;margin-bottom:10px">' + deltaTxt + '</div>' +
-    '<div style="height:8px;border-radius:8px;background:#23272f;overflow:hidden"><span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,#4c8dff,#7bd88f)"></span></div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:12px;color:#8b93a1;margin-top:6px"><span>' + Math.round(pct) + '% пути</span><span>осталось ' + r05(Math.max(0, GOAL - cur)) + ' кг</span></div>' +
-    '<p style="margin:12px 0 0;font-size:14px">' + hint + '</p>' +
-    '<div style="margin-top:10px">' + hist + '</div>' +
-    '<p style="margin:10px 0 0;font-size:12px;color:#8b93a1">Максимум считается по формуле Эпли из рабочих подходов. На максимум жать не нужно: 5 повторов с нормальным весом дают ту же оценку.</p>';
-}
-if (typeof updateProgress === "function"){
-  var _updateProgress = updateProgress;
-  window.updateProgress = function(){ _updateProgress(); try { renderBench(); } catch(e){} };
-}
-try { renderBench(); } catch(e){}
-
-/* === Бэкап и восстановление истории === */
-try {
-  var _exp = document.getElementById("export");
-  if (_exp && !document.getElementById("bkp")) {
-    _exp.insertAdjacentHTML("afterend",
-      '<button type="button" class="btn" id="bkp">Сохранить бэкап</button>' +
-      '<button type="button" class="btn" id="rst">Восстановить из бэкапа</button>' +
-      '<input type="file" id="rstfile" accept=".json,application/json,text/plain" style="display:none">');
-
-    document.getElementById("bkp").onclick = function(){
-      var data = JSON.stringify(store);
-      var blob = new Blob([data], {type:"application/json;charset=utf-8"});
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "gymlog-backup-" + new Date().toISOString().slice(0,10) + ".json";
-      a.click();
-      URL.revokeObjectURL(a.href);
-      if (typeof toast === "function") toast("Бэкап скачан — не удаляй файл");
-    };
-
-    document.getElementById("rst").onclick = function(){
-      document.getElementById("rstfile").click();
-    };
-
-    document.getElementById("rstfile").onchange = function(ev){
-      var f = ev.target.files && ev.target.files[0];
-      if(!f) return;
-      var fr = new FileReader();
-      fr.onload = function(){
-        try {
-          var inc = JSON.parse(String(fr.result));
-          var incs = (inc && inc.sessions) || {};
-          var n = 0;
-          Object.keys(incs).forEach(function(k){
-            if(!store.sessions[k]){ store.sessions[k] = incs[k]; n++; }
-            else {
-              var a = store.sessions[k], b = incs[k];
-              b.sets = b.sets || {};
-              Object.keys(b.sets).forEach(function(ex){
-                if(!a.sets[ex] || !a.sets[ex].length){ a.sets[ex] = b.sets[ex]; n++; }
-              });
-              ["cardio","pulse","steps","note","bw"].forEach(function(fl){
-                if(!a[fl] && b[fl]) a[fl] = b[fl];
-              });
-            }
-          });
-          save();
-          renderAll();
-          if (typeof renderHist === "function") renderHist();
-          if (typeof updateProgress === "function") updateProgress();
-          if (typeof toast === "function") toast("Восстановлено записей: " + n);
-        } catch(e){
-          alert("Не удалось прочитать бэкап: " + e.message);
-        }
-        ev.target.value = "";
-      };
-      fr.readAsText(f);
-    };
-  }
-} catch(e){}
-
-/* === Импорт из приложения «Здоровье» через Быструю команду === */
-try {
-  var SC_NAME = "Здоровье в дневник";
-
-  /* 1. Кнопка запуска команды */
-  var _st = document.getElementById("steps");
-  if (_st && !document.getElementById("hkbtn")) {
-    var _host = _st.closest("section") || _st.parentNode;
-    _host.insertAdjacentHTML("beforeend",
-      '<button type="button" class="btn" id="hkbtn" style="margin-top:10px;width:100%">Подтянуть из «Здоровья»</button>' +
-      '<p id="hkhint" style="margin:6px 0 0;font-size:12px;color:#8b93a1">Нужна Быстрая команда с именем «' + SC_NAME + '».</p>');
-    document.getElementById("hkbtn").onclick = function(){
-      location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(SC_NAME);
-    };
-  }
-
-  /* 2. Приём данных из адресной строки */
-  var _qs = new URLSearchParams(location.search || "");
-  if (location.hash && location.hash.length > 1 && !location.search) {
-    _qs = new URLSearchParams(location.hash.slice(1));
-  }
-  var _got = [];
-  function _num(v){ var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : null; }
-
-  if (["steps","kcal","pulse","bw","cardio","sleep","date"].some(function(k){ return _qs.has(k); })) {
-    if (_qs.has("date")) {
-      var _d = _qs.get("date");
-      if (/^\\d{4}-\\d{2}-\\d{2}$/.test(_d)) { document.getElementById("date").value = _d; }
-    }
-    var s = session();
-
-    var _v = _num(_qs.get("steps"));
-    if (_v !== null) { s.steps = String(Math.round(_v)); _got.push("шаги " + s.steps); }
-
-    _v = _num(_qs.get("pulse"));
-    if (_v !== null) { s.pulse = String(Math.round(_v)); _got.push("пульс " + s.pulse); }
-
-    _v = _num(_qs.get("bw"));
-    if (_v !== null) { s.bw = String(Math.round(_v * 10) / 10); _got.push("вес " + s.bw); }
-
-    _v = _num(_qs.get("cardio"));
-    if (_v !== null) { s.cardio = String(Math.round(_v)); _got.push("кардио " + s.cardio + " мин"); }
-
-    var _extra = [];
-    _v = _num(_qs.get("kcal"));
-    if (_v !== null) { _extra.push("Активные ккал: " + Math.round(_v)); _got.push("ккал " + Math.round(_v)); }
-    _v = _num(_qs.get("sleep"));
-    if (_v !== null) { _extra.push("Сон: " + (Math.round(_v * 10) / 10) + " ч"); _got.push("сон " + (Math.round(_v * 10) / 10) + " ч"); }
-    if (_extra.length) {
-      var _line = _extra.join(", ");
-      var _cur = s.note || "";
-      if (_cur.indexOf(_line) === -1) { s.note = _cur ? (_cur.replace(/\\s*\\u0410ктивные ккал:[^\\n]*/g, "").trim() + "\\n" + _line).trim() : _line; }
-    }
-
-    save();
-    renderAll();
-    if (typeof renderHist === "function") renderHist();
-    if (typeof updateProgress === "function") updateProgress();
-    if (typeof toast === "function" && _got.length) toast("Из «Здоровья»: " + _got.join(", "));
-    try { history.replaceState(null, "", location.pathname); } catch(e){}
-  }
-} catch(e){}
-
-/* === Вставка данных «Здоровья» из буфера обмена === */
-try {
-  function hkApply(txt){
+  var NL = String.fromCharCode(10);
+  window.hkApply = function(txt){
     if(!txt) return 0;
     var t = String(txt).trim();
-    var i = t.indexOf("?");
-    if(i >= 0) t = t.slice(i + 1);
-    t = t.replace(/[;\\n\\r,\\s]+/g, "&").replace(/&+/g, "&");
+    var qi = t.indexOf("?");
+    if(qi >= 0) t = t.slice(qi + 1);
+    t = t.replace(/[^A-Za-z0-9=.-]+/g, "&");
     var p = new URLSearchParams(t);
     function num(v){ var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : null; }
     var got = [];
     if(p.has("date")){
       var d = p.get("date");
-      if(/^\\d{4}-\\d{2}-\\d{2}$/.test(d)) document.getElementById("date").value = d;
+      if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) document.getElementById("date").value = d;
     }
     var s = session(), v;
     v = num(p.get("steps"));
@@ -272,15 +35,17 @@ try {
     if(v !== null){ s.bw = String(Math.round(v * 10) / 10); got.push("вес " + s.bw); }
     v = num(p.get("cardio"));
     if(v !== null){ s.cardio = String(Math.round(v)); got.push("кардио " + s.cardio); }
-    var extra = [];
+    var ex = [];
     v = num(p.get("kcal"));
-    if(v !== null){ extra.push("Активные ккал: " + Math.round(v)); got.push("ккал " + Math.round(v)); }
+    if(v !== null){ ex.push("Активные ккал: " + Math.round(v)); got.push("ккал " + Math.round(v)); }
     v = num(p.get("sleep"));
-    if(v !== null){ extra.push("Сон: " + (Math.round(v * 10) / 10) + " ч"); got.push("сон " + (Math.round(v * 10) / 10) + " ч"); }
-    if(extra.length){
-      var line = extra.join(", ");
-      var cur = (s.note || "").replace(/\\s*\\u0410ктивные ккал:[^\\n]*/g, "").replace(/\\s*\\u0421он:[^\\n]*/g, "").trim();
-      s.note = cur ? (cur + "\\n" + line) : line;
+    if(v !== null){ ex.push("Сон: " + (Math.round(v * 10) / 10) + " ч"); got.push("сон " + (Math.round(v * 10) / 10) + " ч"); }
+    if(ex.length){
+      var keep = String(s.note || "").split(NL).filter(function(ln){
+        return ln.indexOf("Активные ккал:") !== 0 && ln.indexOf("Сон:") !== 0;
+      });
+      keep.push(ex.join(", "));
+      s.note = keep.join(NL).trim();
     }
     if(!got.length) return 0;
     save();
@@ -289,8 +54,7 @@ try {
     if (typeof updateProgress === "function") updateProgress();
     if (typeof toast === "function") toast("Из «Здоровья»: " + got.join(", "));
     return got.length;
-  }
-  window.hkApply = hkApply;
+  };
 
   var _hb = document.getElementById("hkbtn");
   if (_hb && !document.getElementById("hkpaste")) {
@@ -298,16 +62,15 @@ try {
       '<button type="button" class="btn primary" id="hkpaste" style="margin-top:8px;width:100%">Вставить из буфера</button>');
     var _hint = document.getElementById("hkhint");
     if (_hint) _hint.textContent = "1) Подтянуть — запустит команду. 2) Вернись сюда и нажми «Вставить из буфера».";
-
     document.getElementById("hkpaste").onclick = function(){
       function manual(){
-        var t = prompt("Вставь строку из команды (удержи поле → Вставить):", "");
-        if(t && !hkApply(t)) alert("Не нашёл чисел. Формат: steps=12744;kcal=680;pulse=59");
+        var t = prompt("Вставь строку из команды (удержи поле, потом Вставить):", "");
+        if(t && !window.hkApply(t)) alert("Не нашёл чисел. Формат: steps=12744;kcal=680;pulse=59");
       }
       try {
         if (navigator.clipboard && navigator.clipboard.readText) {
           navigator.clipboard.readText().then(function(t){
-            if(!hkApply(t)) manual();
+            if(!window.hkApply(t)) manual();
           }).catch(manual);
         } else { manual(); }
       } catch(e){ manual(); }
@@ -319,27 +82,59 @@ try {
 <script>
 (function(){
   var BASE = "https://raw.githubusercontent.com/xjwjf580-boop/23wedsxzcwesd/c5e11374e94369aeea6ca6ca44725dcdd5662f26/index.html";
-  var CACHE = "gymlog_base_html_v1";
+  var PSRC = "https://raw.githubusercontent.com/xjwjf580-boop/23wedsxzcwesd/01b557ee5d57648f267f399af3768615f53c87ed/index.html";
+  var CB = "gymlog_base_html_v1";
+  var CP = "gymlog_patch_v2";
+  var TAG = "scr" + "ipt";
   var msg = document.getElementById("msg");
-  function boot(html){
-    var patch = document.getElementById("patch").textContent;
-    var out = html.replace(/<\\/body>/i, function(){ return "<scr" + "ipt>" + patch + "<\\/scr" + "ipt></body>"; });
+  var extra = document.getElementById("extra").textContent;
+
+  function get(key){ try { return localStorage.getItem(key); } catch(e){ return null; } }
+  function put(key, val){ try { localStorage.setItem(key, val); } catch(e){} }
+
+  function cut(txt){
+    var a = txt.indexOf('id="patch">');
+    if(a < 0) return "";
+    a = a + 'id="patch">'.length;
+    var b = txt.indexOf("</" + TAG + ">", a);
+    if(b < 0) return "";
+    return txt.slice(a, b);
+  }
+
+  function boot(html, patch){
+    var i = html.lastIndexOf("</body>");
+    if(i < 0) i = html.length;
+    var code = "<" + TAG + ">" + patch + String.fromCharCode(10) + extra + "</" + TAG + ">";
+    var out = html.slice(0, i) + code + html.slice(i);
     document.open();
     document.write(out);
     document.close();
   }
-  var cached = null;
-  try { cached = localStorage.getItem(CACHE); } catch(e){}
-  if (cached && cached.length > 100000) { boot(cached); return; }
-  fetch(BASE).then(function(r){
-    if(!r.ok) throw new Error("HTTP " + r.status);
-    return r.text();
-  }).then(function(t){
-    try { localStorage.setItem(CACHE, t); } catch(e){}
-    boot(t);
-  }).catch(function(e){
+
+  function fail(e){
     msg.textContent = "Не удалось загрузить дневник: " + e.message + ". Проверь интернет и обнови страницу.";
-  });
+  }
+
+  function need(url, key, minLen, pick){
+    var c = get(key);
+    if(c && c.length > minLen) return Promise.resolve(c);
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    }).then(function(t){
+      var val = pick ? pick(t) : t;
+      if(!val || val.length < minLen) throw new Error("пустой ответ");
+      put(key, val);
+      return val;
+    });
+  }
+
+  Promise.all([
+    need(BASE, CB, 100000, null),
+    need(PSRC, CP, 2000, cut)
+  ]).then(function(res){
+    boot(res[0], res[1]);
+  }).catch(fail);
 })();
 </script>
 </body>
