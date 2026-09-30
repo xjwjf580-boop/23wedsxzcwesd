@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-label="Скручивание на блоке: старт и финиш">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111827"/><stop offset="1" stop-color="#0b1220"/></linearGradient>
+  <filter id="sh"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity=".28"/></filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7dd3fc"/></marker>
+</defs>
+<rect width="900" height="420" rx="28" fill="url(#bg)"/>
+<rect x="24" y="24" width="416" height="330" rx="22" fill="#151f32" stroke="#26344f"/>
+<rect x="460" y="24" width="416" height="330" rx="22" fill="#151f32" stroke="#26344f"/>
+<text x="52" y="64" fill="#93c5fd" font-family="Arial, sans-serif" font-size="20" font-weight="700">СТАРТ</text>
+<text x="488" y="64" fill="#86efac" font-family="Arial, sans-serif" font-size="20" font-weight="700">ФИНИШ</text>
+<circle cx="200" cy="115" r="15" fill="#cbd5e1"/><path d="M200 130 C210 170 225 205 245 240" fill="none" stroke="#e2e8f0" stroke-width="14"/><ellipse cx="220" cy="185" rx="24" ry="35" fill="#fb7185" opacity=".65"/><circle cx="655" cy="145" r="15" fill="#cbd5e1"/><path d="M655 160 C630 180 620 205 625 245" fill="none" stroke="#e2e8f0" stroke-width="14"/><ellipse cx="635" cy="198" rx="24" ry="35" fill="#fb7185" opacity=".65"/><path d="M350 135 C390 160 420 190 435 220" fill="none" stroke="#7dd3fc" stroke-width="5" marker-end="url(#arr)"/>
+<text x="34" y="392" fill="#dbeafe" font-family="Arial, sans-serif" font-size="22" font-weight="700">Скручивание на блоке</text>
+<text x="866" y="392" text-anchor="end" fill="#94a3b8" font-family="Arial, sans-serif" font-size="16">пресс</text>
+</svg>
